@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         收收味
 // @namespace    http://tampermonkey.net/
-// @version      0.1
+// @version      0.2
 // @description  B站直播弹幕清理，旨在提高弹幕的信息密度
 // @author       xfgryujk
 // @include      /https?:\/\/live\.bilibili\.com\/?\??.*/
@@ -9,8 +9,7 @@
 // @include      /https?:\/\/live\.bilibili\.com\/(blanc\/)?\d+\??.*/
 // @run-at       document-start
 // @require      https://cdn.jsdelivr.net/gh/google/brotli@5692e422da6af1e991f9182345d58df87866bc5e/js/decode.js
-// @require      https://cdn.jsdelivr.net/npm/pako@2.0.3/dist/pako_inflate.min.js
-// @require      https://greasyfork.org/scripts/417560-bliveproxy/code/bliveproxy.js?version=931022
+// @require      https://greasyfork.org/scripts/417560-bliveproxy/code/bliveproxy.js?version=984333
 // @grant        none
 // ==/UserScript==
 
