@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         收收味
 // @namespace    http://tampermonkey.net/
-// @version      0.2
+// @version      0.3
 // @description  B站直播弹幕清理，旨在提高弹幕的信息密度
 // @author       xfgryujk
 // @include      /https?:\/\/live\.bilibili\.com\/?\??.*/
@@ -23,7 +23,9 @@
       shink1CharRight,
       shink2CharLeft,
       shink3CharLeft,
+
       hideRecentRepeat,
+      hideRepeater,
     ]
     bliveproxy.addCommandHandler('DANMU_MSG', danmakuHandler)
   }
@@ -66,6 +68,9 @@
     constructor(command) {
       let info = command.info
       this.msg = info[1]
+      this.uid = info[2][0]
+      this.username = info[2][1]
+
       this._showDanmaku = true
       this._showComment = true
     }
@@ -145,7 +150,7 @@
       recentRepeatInfoMap.set(key, repeatInfo)
 
       // 清理
-      if (recentRepeatInfoMap.size >= 256) {
+      if (recentRepeatInfoMap.size >= 1024) {
         let keysToDel = []
         for (let [key, repeatInfo] of recentRepeatInfoMap.entries()) {
           if (curTime - repeatInfo >= MIN_REPEAT_INTERVAL) {
@@ -163,6 +168,48 @@
       return
     }
     ctx.hideDanmaku()
+  }
+
+  // uid -> {msg: 重复弹幕内容, startTime: 重复开始时间, repeatNum: 重复次数}
+  let uidRepeatInfoMap = new Map()
+  let uidBlacklistForRepeat = new Set()
+  const REPEAT_PERIOD_PER_USER = 30 * 1000
+  const REPEAT_NUM_FOR_ADD_BLACK = 3
+  // 屏蔽复读机用户
+  function hideRepeater(ctx) {
+    if (uidBlacklistForRepeat.has(ctx.uid)) {
+      ctx.hideDanmaku()
+      ctx.hideComment()
+      return
+    }
+
+    let curTime = new Date()
+    let repeatInfo = uidRepeatInfoMap.get(ctx.uid)
+
+    if (repeatInfo !== undefined) {
+      // 清理
+      if (curTime - repeatInfo.startTime > REPEAT_PERIOD_PER_USER || repeatInfo.msg != ctx.msg) {
+        repeatInfo = undefined
+      }
+    }
+
+    if (repeatInfo === undefined) {
+      // 第一次重复计数
+      repeatInfo = {
+        msg: ctx.msg,
+        startTime: curTime,
+        repeatNum: 1
+      }
+      uidRepeatInfoMap.set(ctx.uid, repeatInfo)
+      return
+    }
+
+    if (++repeatInfo.repeatNum >= REPEAT_NUM_FOR_ADD_BLACK) {
+      console.log(`拉黑【${ctx.username}】，uid=${ctx.uid}，复读内容：${repeatInfo.msg}`)
+      ctx.msg = '【此用户已屏蔽】' + ctx.msg
+      uidBlacklistForRepeat.add(ctx.uid)
+      ctx.hideDanmaku()
+    }
   }
 
   main()
